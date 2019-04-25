@@ -1,0 +1,49 @@
+---
+title: "week15"
+author: "Laurel"
+date: "April 24, 2019"
+output: html_document
+---
+
+##Exploring unemployment in Rmarkdown
+
+
+```{r tidyness, warning=F, message=F, echo=F}
+library(tidycensus)
+library(tidyverse)
+```
+
+''
+```{r}
+
+jobs<- c(labor_force="B23025_005E",
+          unemployed="B23025_002E")
+
+lac <- get_acs(geography="tract", year=2016,
+variables=jobs, county="Los Angeles",
+state="CA", geometry=T)
+```
+```{r}
+lac_tidy <- lac %>% 
+  mutate(variable=case_when(
+    variable=="B23025_005"~"Unemployed",
+    variable=="B23025_002" ~ "Workforce")) %>% 
+    select(-moe) %>% 
+  spread(variable,estimate) %>% 
+  mutate(percent_unemployed=round(Unemployed/Workforce*100,2))
+  
+```
+
+
+```{r}
+lac_tidy %>% 
+  filter(GEOID != "06037599000" & GEOID != "06037599100") %>%
+  filter(percent_unemployed <= 25) %>% 
+  ggplot(aes(fill=percent_unemployed))+
+  geom_sf(color=NA) +
+  theme_void() +
+  theme(panel.grid.major = element_line(color=NA))+
+  scale_fill_distiller(palette="Reds", direction=1, name="Estimate")+
+  labs(title="Percent unemployed in Los Angeles")
+```
+
